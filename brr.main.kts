@@ -308,31 +308,24 @@ val samplesPerTick = listOf(
     1
 )
 
-fun createEnvelope(): Envelope {
-    val localAdsr = adsr
-    val localGain = gain
-
-    return if (localAdsr != null) {
+fun createEnvelope() =
+    adsr?.let {
         AdsrEnvelope(
-            attackRate = localAdsr shr 8 and 0xF,
-            decayRate = localAdsr shr 12 and 0x7,
-            sustainLevel = localAdsr shr 5 and 0x7,
-            sustainRate = localAdsr and 0x1F
+            attackRate = it shr 8 and 0xF,
+            decayRate = it shr 12 and 0x7,
+            sustainLevel = it shr 5 and 0x7,
+            sustainRate = it and 0x1F
         )
-    } else if (localGain != null) {
-        if (localGain and 0b10000000 == 0) {
-            DirectGainEnvelope(localGain shl 4)
+    } ?: gain?.let {
+        if (it and 0b10000000 == 0) {
+            DirectGainEnvelope(it shl 4)
         } else {
             CustomGainEnvelope(
-                mode = CustomGainEnvelope.Mode.entries[localGain shr 5 and 3],
-                rate = localGain and 0x1F
+                mode = CustomGainEnvelope.Mode.entries[it shr 5 and 3],
+                rate = it and 0x1F
             )
         }
-    } else {
-        // Use maximum volume if no envelope was specified.
-        DirectGainEnvelope(0x800)
-    }
-}
+    } ?: DirectGainEnvelope(0x800) // Default to maximum volume
 
 /**
  * Reads and returns the compressed BRR blocks from the [inputFile].
